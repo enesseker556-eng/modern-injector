@@ -1,0 +1,46 @@
+﻿name: Build Kernel Driver
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Visual Studio 2022
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '[17.0,18.0)'
+      
+      - name: Install WDK
+        shell: powershell
+        run: |
+          # Windows SDK 10.0.26100 indir ve kur
+          choco install windows-sdk-10-version-26100 -y
+          
+      - name: Build modern_injector.sys
+        run: |
+          msbuild modern_injector.vcxproj /p:Configuration=Release /p:Platform=x64 /p:PlatformToolset=WindowsKernelModeDriver10.0
+          
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: modern_injector.sys
+          path: bin/Release/x64/modern_injector.sys
+          
+      - name: Build loader.exe
+        shell: powershell
+        run: |
+          $cl = "C:\Program Files\Microsoft Visual Studio\17.0\Community\VC\Tools\MSVC\*\bin\Hostx64\x64\cl.exe"
+          & (Resolve-Path $cl).Path /nologo /O2 /std:c++latest `
+            /I"${env:ProgramFiles(x86)}\Windows Kits\10\Include\10.0.26100.0\um" `
+            /I"${env:ProgramFiles(x86)}\Windows Kits\10\Include\10.0.26100.0\shared" `
+            loader.cpp /link kernel32.lib user32.lib /OUT:loader.exe
+      
+      - name: Upload loader
+        uses: actions/upload-artifact@v3
+        with:
+          name: loader.exe
+          path: loader.exe
