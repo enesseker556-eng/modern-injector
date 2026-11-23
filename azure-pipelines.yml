@@ -1,0 +1,40 @@
+﻿trigger:
+  - master
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+  - task: UseDotNet@2
+    inputs:
+      version: '7.x'
+
+  - script: |
+      choco install windows-sdk-10-version-26100 -y
+    displayName: 'Install Windows SDK 10.0.26100'
+
+  - script: |
+      choco install visualstudio2022community --package-parameters "--add Microsoft.VisualStudio.Workload.NativeDesktop --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64" -y
+    displayName: 'Install Visual Studio 2022'
+
+  - task: VSBuild@1
+    inputs:
+      solution: 'modern_injector.vcxproj'
+      configuration: 'Release'
+      platform: 'x64'
+      msbuildArgs: '/p:PlatformToolset=WindowsKernelModeDriver10.0'
+    displayName: 'Build modern_injector.sys'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)\bin\Release\x64'
+      Contents: 'modern_injector.sys'
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+    condition: succeeded()
+    displayName: 'Copy .sys artifact'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: 'kernel-driver'
+    displayName: 'Publish artifacts'
