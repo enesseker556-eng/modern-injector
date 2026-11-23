@@ -1,13 +1,20 @@
+// Kernel mode target version
+#define NTDDI_VERSION NTDDI_WIN10_FE
+#define _WIN32_WINNT 0x0A00
+
+// Suppress WDK header warnings
 #pragma warning(push)
-#pragma warning(disable: 2059)
-#pragma warning(disable: 2238)
-#pragma warning(disable: 2143)
-#pragma warning(disable: 4616)
-#pragma warning(disable: 4214)
-#pragma warning(disable: 4201)
+#pragma warning(disable: 4201)  // nameless struct/union
+#pragma warning(disable: 4214)  // bit field types other than int
+#pragma warning(disable: 4324)  // structure padded
+#pragma warning(disable: 4091)  // typedef ignored
+#pragma warning(disable: 4005)  // macro redefinition
+
+#include <ntdef.h>
 #include <ntifs.h>
 #include <ntimage.h>
 #include <ntstrsafe.h>
+
 #pragma warning(pop)
 
 #define DEVICE_NAME     L"\\Device\\ModernInjector"
